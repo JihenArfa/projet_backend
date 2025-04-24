@@ -1,0 +1,235 @@
+
+
+
+// const bcrypt = require('bcryptjs');
+// const jwt = require('jsonwebtoken');
+// const Admin = require('../models/admin'); // Modèle Admin avec Mongoose
+
+// // 🔧 Fonction pour créer un admin s'il n'existe pas
+// exports.createAdminIfNotExist = async (req, res) => {
+//   try {
+//     let admin = await Admin.findOne({ email: 'admin@gmail.com' });
+
+//     // S'il n'existe pas, on le crée
+//     if (!admin) {
+//       const hashedPassword = await bcrypt.hash('admin', 10);
+//       admin = await Admin.create({
+//         nom: 'Admin',
+//         email: 'admin@gmail.com',
+//         password: hashedPassword,
+//         role: 'admin'
+//       });
+//     }
+
+//     // Générer le token JWT
+//     const token = jwt.sign(
+//       { email: admin.email, role: admin.role },
+//       'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb', // Clé secrète
+//       { expiresIn: '1h' }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Admin existant ou créé avec succès.',
+//       token: token,
+//       role: admin.role
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Erreur lors de la vérification de l\'admin.' });
+//   }
+// };
+
+// // 🔐 Fonction de connexion (login)
+// exports.login = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const admin = await Admin.findOne({ email });
+
+//     if (!admin) {
+//       return res.status(400).json({ message: 'Admin non trouvé' });
+//     }
+
+//     const isPasswordValid = await bcrypt.compare(password, admin.password);
+//     if (!isPasswordValid) {
+//       return res.status(400).json({ message: 'Mot de passe incorrect' });
+//     }
+
+//     const token = jwt.sign(
+//       { email: admin.email, role: admin.role },
+//       'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb',
+//       { expiresIn: '1h' }
+//     );
+
+//     return res.status(200).json({
+//       message: 'Connexion réussie',
+//       token: token,
+//       role: admin.role,
+//       userId: admin._id
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Erreur interne du serveur' });
+//   }
+// };
+
+// // Fonction pour récupérer les informations de l'admin connecté
+// exports.getAdmin = async (req, res) => {
+//   // Le token est envoyé dans l'en-tête Authorization
+//   const token = req.headers.authorization?.split(' ')[1]; // "Bearer token"
+
+//   if (!token) {
+//     return res.status(401).json({ message: 'Authentification requise' });
+//   }
+
+//   try {
+//     // Vérification du token
+//     const decoded = jwt.verify(token, 'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb'); // Clé secrète
+//     const admin = await Admin.findById(decoded.userId); // Recherche de l'admin dans la base de données
+
+//     if (!admin) {
+//       return res.status(404).json({ message: 'Admin non trouvé' });
+//     }
+
+//     // Retourner les informations de l'admin
+//     return res.status(200).json({
+//       message: 'Admin trouvé',
+//       admin: {
+//         id: admin._id,
+//         nom: admin.nom,
+//         email: admin.email,
+//         role: admin.role
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Erreur interne lors de la récupération de l\'admin' });
+//   }
+// };
+
+
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const Admin = require('../models/admin'); // Modèle Admin avec Mongoose
+
+// 🔧 Fonction pour créer un admin s'il n'existe pas
+exports.createAdminIfNotExist = async (req, res) => {
+  try {
+    // Recherche d'un admin avec l'email spécifique
+    let admin = await Admin.findOne({ email: 'admin@gmail.com' });
+
+    // Si l'admin n'existe pas, on le crée
+    if (!admin) {
+      // Hashage du mot de passe pour le sécuriser
+      const hashedPassword = await bcrypt.hash('admin', 10);
+
+      // Création de l'admin dans la base de données
+      admin = await Admin.create({
+        nom: 'Admin',
+        email: 'admin@gmail.com',
+        password: hashedPassword,
+        role: 'admin'
+      });
+    }
+
+    // Générer le token JWT
+    const token = jwt.sign(
+      { userId: admin._id, email: admin.email, role: admin.role }, // Ajouter l'ID de l'admin ici
+      'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb', // Clé secrète
+      { expiresIn: '1h' }
+    );
+
+    // Retourner la réponse avec le token et le rôle
+    return res.status(200).json({
+      message: 'Admin existant ou créé avec succès.',
+      token: token,
+      role: admin.role
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de la vérification de l\'admin.' });
+  }
+};
+
+// 🔐 Fonction de connexion (login)
+exports.login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Recherche de l'admin dans la base de données par email
+    const admin = await Admin.findOne({ email });
+
+    // Si l'admin n'existe pas
+    if (!admin) {
+      return res.status(400).json({ message: 'Admin non trouvé' });
+    }
+
+    // Vérification du mot de passe
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Mot de passe incorrect' });
+    }
+
+    // Génération du token JWT avec l'ID de l'admin
+    const token = jwt.sign(
+      { userId: admin._id, email: admin.email, role: admin.role }, // Ajouter l'ID de l'admin ici
+      'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb', // Clé secrète
+      { expiresIn: '1h' }
+    );
+
+    // Retourner la réponse avec le token, le rôle et l'ID de l'admin
+    return res.status(200).json({
+      message: 'Connexion réussie',
+      token: token,
+      role: admin.role,
+      userId: admin._id
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur interne du serveur' });
+  }
+};
+
+// Fonction pour récupérer les informations de l'admin connecté
+exports.getAdmin = async (req, res) => {
+  // Le token est envoyé dans l'en-tête Authorization sous la forme "Bearer <token>"
+  const token = req.headers.authorization?.split(' ')[1]; // "Bearer token"
+
+  // Si aucun token n'est fourni
+  if (!token) {
+    return res.status(401).json({ message: 'Authentification requise' });
+  }
+
+  try {
+    // Vérification du token
+    const decoded = jwt.verify(token, 'Zk7#3hdU8v2wrD!9mMZp1Qm0!Yb'); // Clé secrète
+
+    // Recherche de l'admin à partir de l'ID extrait du token
+    const admin = await Admin.findById(decoded.userId);
+
+    // Si l'admin n'est pas trouvé
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin non trouvé' });
+    }
+
+    // Retourner les informations de l'admin
+    return res.status(200).json({
+      message: 'Admin trouvé',
+      admin: {
+        id: admin._id,
+        nom: admin.nom,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur interne lors de la récupération de l\'admin' });
+  }
+};
