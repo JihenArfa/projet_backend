@@ -10,7 +10,7 @@ const bottleRoutes = require("./routes/bottleRoutes");
 const admin = require('./models/admin');
 const countroute = require('./routes/countroute');
 const cors = require('cors');
-
+const syncBottles = require('./scripts/syncbottles')
 
 dotenv.config({ path: "./.env" });
 

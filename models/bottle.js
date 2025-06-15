@@ -4,6 +4,11 @@ const mongoose = require('mongoose');
 
 // const validator = require("validator");
 const bottleSchema = new mongoose.Schema({
+  binId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Poubelle',  // Assurez-vous de faire référence au bon modèle
+    required: true
+},
     type: {
     type: String, 
     required: true, 

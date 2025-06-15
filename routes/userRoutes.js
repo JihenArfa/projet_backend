@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllUsers, getUserById ,getUserBottleStats,forgotPassword,resetPassword} = require('../controllers/userController'); 
+const { getAllUsers, getUserById ,getUserBottleStats,updateUser,forgotPassword,resetPassword} = require('../controllers/userController'); 
 const router = express.Router();
 
 // Récupérer tous les utilisateurs
@@ -9,7 +9,7 @@ router.get('/users/:id',getUserById);
 router.get('/users/:userId/bottles', getUserBottleStats);
 
 
-
+router.put('/users/:id', updateUser);
 
 
 
